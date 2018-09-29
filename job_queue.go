@@ -111,7 +111,6 @@ func (w *JobWorker) process() (err error) {
 	}
 
 	op := opMeta.New()
-
 	if task.Argv != nil {
 		if e := json.Unmarshal(task.Argv, op); e != nil {
 			err = e
@@ -120,10 +119,15 @@ func (w *JobWorker) process() (err error) {
 	}
 
 	ctx := context.Background()
+	ctx = context.WithValue(ctx, "Task", task)
 
 	if _, e := op.Output(ctx); e != nil {
 		err = e
 		return
 	}
 	return
+}
+
+func TaskFromContext(ctx context.Context) *Task {
+	return ctx.Value("Task").(*Task)
 }
