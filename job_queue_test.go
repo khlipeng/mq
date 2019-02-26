@@ -1,6 +1,7 @@
 package mq_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
@@ -44,9 +45,11 @@ func (A) Output(ctx context.Context) (interface{}, error) {
 }
 
 type B struct {
+	bytes.Buffer
 }
 
-func (B) Output(ctx context.Context) (interface{}, error) {
+func (b B) Output(ctx context.Context) (interface{}, error) {
+	fmt.Println(b.String())
 	return nil, nil
 }
 
@@ -67,8 +70,8 @@ func TestJobQueue(t *testing.T) {
 
 		for i := 0; i < n; i++ {
 			for j := 0; j < 5; j ++ {
-				jobBoard.Dispatch("TEST", mq.NewTask("A", nil, fmt.Sprintf("A%d", i)))
-				jobBoard.Dispatch("TEST", mq.NewTask("B", nil, fmt.Sprintf("B%d", i)))
+				jobBoard.Dispatch("TEST", mq.NewTask("A", []byte("A"), fmt.Sprintf("A%d", i)))
+				jobBoard.Dispatch("TEST", mq.NewTask("B", []byte("B"), fmt.Sprintf("B%d", i)))
 			}
 		}
 

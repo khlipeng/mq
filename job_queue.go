@@ -2,8 +2,8 @@ package mq
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
 	"runtime/debug"
 	"sync"
 
@@ -111,10 +111,13 @@ func (w *JobWorker) process() (err error) {
 	}
 
 	op := opMeta.New()
+
 	if task.Argv != nil {
-		if e := json.Unmarshal(task.Argv, op); e != nil {
-			err = e
-			return
+		if writer, ok := op.(io.Writer); ok {
+			if _, e := writer.Write(task.Argv); e != nil {
+				err = e
+				return
+			}
 		}
 	}
 
