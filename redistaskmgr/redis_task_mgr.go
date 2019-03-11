@@ -3,7 +3,7 @@ package redistaskmgr
 import (
 	"github.com/golang/protobuf/proto"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/garyburd/redigo/redis"
 
 	"github.com/go-courier/mq"
 )

@@ -12,7 +12,7 @@ import (
 	"github.com/go-courier/courier"
 	"github.com/go-courier/mq/memtaskmgr"
 	"github.com/go-courier/mq/redistaskmgr"
-	"github.com/gomodule/redigo/redis"
+	"github.com/garyburd/redigo/redis"
 
 	"github.com/go-courier/mq"
 )
