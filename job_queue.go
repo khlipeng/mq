@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/go-courier/courier"
+	"github.com/go-courier/metax"
 	"github.com/go-courier/mq/worker"
 )
 
@@ -121,16 +122,14 @@ func (w *JobWorker) process() (err error) {
 		}
 	}
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "Task", task)
+	meta := metax.ParseMeta(task.Id)
+	meta.Add("task", w.Channel+"#"+task.Subject)
+
+	ctx := metax.ContextWithMeta(context.Background(), meta)
 
 	if _, e := op.Output(ctx); e != nil {
 		err = e
 		return
 	}
 	return
-}
-
-func TaskFromContext(ctx context.Context) *Task {
-	return ctx.Value("Task").(*Task)
 }
