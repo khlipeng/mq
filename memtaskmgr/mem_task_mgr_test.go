@@ -1,6 +1,7 @@
 package memtaskmgr
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-courier/mq/worker"
 	"sync"
@@ -37,7 +38,7 @@ func TestTaskMgr(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1000)
 
-	w := worker.NewWorker(func() error {
+	w := worker.NewWorker(func(ctx context.Context) error {
 		task, err := taskMgr.Shift("TEST")
 		if err != nil {
 			return err
@@ -49,6 +50,6 @@ func TestTaskMgr(t *testing.T) {
 		return nil
 	}, 10)
 
-	go w.Start()
+	go w.Start(context.Background())
 	wg.Wait()
 }

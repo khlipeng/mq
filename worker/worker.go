@@ -1,10 +1,11 @@
 package worker
 
 import (
+	"context"
 	"sync"
 )
 
-func NewWorker(process func() error, numWorkers int) *Worker {
+func NewWorker(process func(ctx context.Context) error, numWorkers int) *Worker {
 	return &Worker{
 		numWorkers: numWorkers,
 		process:    process,
@@ -12,21 +13,12 @@ func NewWorker(process func() error, numWorkers int) *Worker {
 }
 
 type Worker struct {
-	numWorkers  int
-	process     func() error
-	stopChannel chan struct{}
-	wg          sync.WaitGroup
+	numWorkers int
+	process    func(ctx context.Context) error
+	wg         sync.WaitGroup
 }
 
-func (mq *Worker) Stop() {
-	for i := 0; i < mq.numWorkers; i++ {
-		mq.stopChannel <- struct{}{}
-	}
-	mq.wg.Wait()
-}
-
-func (mq *Worker) Start() {
-	mq.stopChannel = make(chan struct{}, 1)
+func (mq *Worker) Start(ctx context.Context) {
 	mq.wg.Add(mq.numWorkers)
 
 	for i := 0; i < mq.numWorkers; i++ {
@@ -35,14 +27,16 @@ func (mq *Worker) Start() {
 
 			for {
 				select {
-				case <-mq.stopChannel:
+				case <-ctx.Done():
 					return
 				default:
-					if err := mq.process(); err != nil {
+					if err := mq.process(ctx); err != nil {
 						continue
 					}
 				}
 			}
 		}(i)
 	}
+
+	mq.wg.Wait()
 }

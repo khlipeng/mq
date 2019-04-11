@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
-	"sync"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/go-courier/metax"
+	"github.com/stretchr/testify/require"
+
+	"github.com/garyburd/redigo/redis"
 	"github.com/go-courier/courier"
 	"github.com/go-courier/mq/memtaskmgr"
 	"github.com/go-courier/mq/redistaskmgr"
-	"github.com/garyburd/redigo/redis"
 
 	"github.com/go-courier/mq"
 )
@@ -40,7 +42,8 @@ func init() {
 type A struct {
 }
 
-func (A) Output(ctx context.Context) (interface{}, error) {
+func (a A) Output(ctx context.Context) (interface{}, error) {
+	fmt.Println(metax.MetaFromContext(ctx))
 	return nil, nil
 }
 
@@ -49,7 +52,7 @@ type B struct {
 }
 
 func (b B) Output(ctx context.Context) (interface{}, error) {
-	fmt.Println(b.String())
+	fmt.Println(metax.MetaFromContext(ctx), b.String())
 	return nil, nil
 }
 
@@ -69,7 +72,7 @@ func TestJobQueue(t *testing.T) {
 		n := 100
 
 		for i := 0; i < n; i++ {
-			for j := 0; j < 5; j ++ {
+			for j := 0; j < 5; j++ {
 				jobBoard.Dispatch("TEST", mq.NewTask("A", []byte("A"), fmt.Sprintf("A%d", i)))
 				jobBoard.Dispatch("TEST", mq.NewTask("B", []byte("B"), fmt.Sprintf("B%d", i)))
 			}
@@ -78,20 +81,23 @@ func TestJobQueue(t *testing.T) {
 		router.Register(courier.NewRouter(&A{}))
 		router.Register(courier.NewRouter(&B{}))
 
-		wg := sync.WaitGroup{}
-		wg.Add(n * 2)
-
 		jobWorker := mq.NewJobWorker(taskMgr, mq.JobWorkerOpts{
 			Channel:    "TEST",
 			NumWorkers: 2,
-			OnFinish: func(task *mq.Task) {
+			OnFinish: func(ctx context.Context, task *mq.Task) {
 				require.Equal(t, mq.STAGE_SUCCESS, task.Stage)
-				wg.Add(-1)
 			},
 		})
 
-		go jobWorker.Serve(router)
+		go func() {
+			err := jobWorker.Serve(router)
+			fmt.Println(err)
+		}()
 
-		wg.Wait()
+		time.Sleep(400 * time.Millisecond)
+		p, _ := os.FindProcess(os.Getpid())
+		p.Signal(os.Interrupt)
+
+		time.Sleep(500 * time.Millisecond)
 	}
 }

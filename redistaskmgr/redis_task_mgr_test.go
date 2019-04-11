@@ -1,11 +1,13 @@
 package redistaskmgr
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-courier/mq/worker"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-courier/mq/worker"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/stretchr/testify/require"
@@ -69,7 +71,7 @@ func TestTaskMgr(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(n)
 
-	w := worker.NewWorker(func() error {
+	w := worker.NewWorker(func(ctx context.Context) error {
 		task, err := taskMgr.Shift(channel)
 		if err != nil {
 			return err
@@ -81,6 +83,6 @@ func TestTaskMgr(t *testing.T) {
 		return nil
 	}, n/10)
 
-	go w.Start()
+	go w.Start(context.Background())
 	wg.Wait()
 }
