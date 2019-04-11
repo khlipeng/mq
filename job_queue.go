@@ -68,7 +68,10 @@ func (w *JobWorker) Serve(router *courier.Router) error {
 	signal.Notify(chStop, os.Interrupt, syscall.SIGTERM)
 
 	w.worker = worker.NewWorker(w.process, w.NumWorkers)
-	w.worker.Start(context.Background())
+
+	go func() {
+		w.worker.Start(context.Background())
+	}()
 
 	<-chStop
 
