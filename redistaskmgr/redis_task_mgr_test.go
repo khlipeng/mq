@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-courier/mq/worker"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-courier/mq"
