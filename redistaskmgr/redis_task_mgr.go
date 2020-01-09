@@ -114,7 +114,7 @@ local keyQueue = KEYS[1] .. '::queue'
 local id = redis.call('LPOP', keyQueue)
 local data
 
-if (id == nil) then
+if (id == nil or id == false) then
 	return id
 end
 

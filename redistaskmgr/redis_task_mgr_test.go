@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-courier/mq/worker"
 
-	"github.com/gomodule/redigo/redis"
-	"github.com/stretchr/testify/require"
-
 	"github.com/go-courier/mq"
+	"github.com/gomodule/redigo/redis"
+
+	. "github.com/onsi/gomega"
 )
 
 var taskMgr = NewRedisTaskMgr(r)
@@ -43,18 +43,21 @@ func init() {
 func BenchmarkTaskMgr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		taskMgr.Push(channel, mq.NewTask("TEST", nil, fmt.Sprintf("%d", i)))
-
-		task, err := taskMgr.Shift(channel)
-		require.NoError(b, err)
-		require.NotNil(b, task)
+		taskMgr.Shift(channel)
 	}
 }
 
 func TestSingle(t *testing.T) {
 	taskMgr.Push(channel, mq.NewTask("TEST", nil, "11"))
 	task, err := taskMgr.Shift(channel)
-	require.NoError(t, err)
-	require.NotNil(t, task)
+
+	NewWithT(t).Expect(err).To(BeNil())
+	NewWithT(t).Expect(task).NotTo(BeNil())
+}
+
+func TestTaskMgrEmptyShift(t *testing.T) {
+	_, err := taskMgr.Shift(channel)
+	NewWithT(t).Expect(err).To(BeNil())
 }
 
 func TestTaskMgr(t *testing.T) {

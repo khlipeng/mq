@@ -3,11 +3,10 @@ package memtaskmgr
 import (
 	"context"
 	"fmt"
-	"github.com/go-courier/mq/worker"
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/go-courier/mq/worker"
 
 	"github.com/go-courier/mq"
 )
@@ -17,10 +16,7 @@ var taskMgr = NewMemTaskMgr()
 func BenchmarkTaskMgr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		taskMgr.Push("TEST", mq.NewTask("", nil, fmt.Sprintf("%d", i)))
-
-		task, err := taskMgr.Shift("TEST")
-		require.NotNil(b, task)
-		require.NoError(b, err)
+		taskMgr.Shift("TEST")
 	}
 }
 
