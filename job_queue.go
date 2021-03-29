@@ -51,8 +51,16 @@ type JobWorker struct {
 	operators sync.Map
 	taskMgr   TaskMgr
 	worker    *worker.Worker
+	contextInjector func(ctx context.Context) context.Context
 }
 
+func (w *JobWorker) Context() context.Context {
+	ctx := context.Background()
+	if w.contextInjector != nil {
+		return w.contextInjector(context.Background())
+	}
+	return ctx
+}
 func (w *JobWorker) getOperatorMeta(typ string) (*courier.OperatorMeta, error) {
 	op, ok := w.operators.Load(typ)
 	if !ok {
@@ -61,16 +69,20 @@ func (w *JobWorker) getOperatorMeta(typ string) (*courier.OperatorMeta, error) {
 	return op.(*courier.OperatorMeta), nil
 }
 
+func (s JobWorker) WithContextInjector(contextInjector func(ctx context.Context) context.Context) *JobWorker {
+	s.contextInjector = contextInjector
+	return &s
+}
+
+
 func (w *JobWorker) Serve(router *courier.Router) error {
 	w.Register(router)
 
 	chStop := make(chan os.Signal, 1)
 	signal.Notify(chStop, os.Interrupt, syscall.SIGTERM)
-
 	w.worker = worker.NewWorker(w.process, w.NumWorkers)
-
 	go func() {
-		w.worker.Start(context.Background())
+		w.worker.Start(w.Context())
 	}()
 
 	<-chStop
